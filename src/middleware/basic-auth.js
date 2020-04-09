@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const AuthService = require('../auth/auth-service');
 
 function requireAuth(req, res, next) {
@@ -29,13 +30,10 @@ function requireAuth(req, res, next) {
     (user) => {
       // if the user is empty, or the password doesn't match
       // what we have on record, deny request
-      if (!user || user.password !== tokenPassword) {
+      if (!user) {
         return res.status(401).json({ error: 'Unauthorized request' });
       }
 
-      // else set the user on the request body and pass it on
-      // this allows the id to be picked up among other info
-      // e.g. user.id
       req.user = user;
 
       next();
