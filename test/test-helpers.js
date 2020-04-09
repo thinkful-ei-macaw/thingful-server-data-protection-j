@@ -260,7 +260,7 @@ function seedUsers(db, users) {
 //     .then(() => reviews.length && db.into('thingful_reviews').insert(reviews));
 // }
 
-function seedThingsTables(db, users, things, reviews = []) {
+function seedThingsTables(db, users, things = [], reviews = []) {
   return db.transaction(async (trx) => {
     await seedUsers(trx, users);
 
