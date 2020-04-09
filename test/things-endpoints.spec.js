@@ -42,7 +42,7 @@ describe('Things Endpoints', function () {
     });
 
     context(`Given an XSS attack thing`, () => {
-      const testUser = helpers.makeUsersArray()[1];
+      const testUser = testUsers[0];
       const { maliciousThing, expectedThing } = helpers.makeMaliciousThing(
         testUser
       );
@@ -96,7 +96,7 @@ describe('Things Endpoints', function () {
     });
 
     context(`Given an XSS attack thing`, () => {
-      const testUser = helpers.makeUsersArray()[1];
+      const testUser = testUsers[0];
       const { maliciousThing, expectedThing } = helpers.makeMaliciousThing(
         testUser
       );
