@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 function makeUsersArray() {
   return [
     {
@@ -232,12 +234,49 @@ function cleanTables(db) {
   );
 }
 
-function seedThingsTables(db, users, things, reviews = []) {
+function seedUsers(db, users) {
+  const usersHashedPw = users.map((user) => ({
+    ...user,
+    password: bcrypt.hashSync(user.password, 1)
+  }));
   return db
     .into('thingful_users')
-    .insert(users)
-    .then(() => db.into('thingful_things').insert(things))
-    .then(() => reviews.length && db.into('thingful_reviews').insert(reviews));
+    .insert(usersHashedPw)
+    .then(() =>
+      db.raw(
+        `
+    SELECT setval('thingful_users_id_seq', ?)
+    `,
+        [users[users.length - 1].id]
+      )
+    );
+}
+
+// function seedThingsTables(db, users, things, reviews = []) {
+//   return db
+//     .into('thingful_users')
+//     .insert(users)
+//     .then(() => db.into('thingful_things').insert(things))
+//     .then(() => reviews.length && db.into('thingful_reviews').insert(reviews));
+// }
+
+function seedThingsTables(db, users, things, reviews = []) {
+  return db.transaction(async (trx) => {
+    await seedUsers(trx, users);
+
+    if (things.length) {
+      await trx.into('thingful_things').insert(things);
+      await trx.raw(`SELECT setval('thingful_things_id_seq', ?)`, [
+        things[things.length - 1].id
+      ]);
+    }
+    if (reviews.length) {
+      await trx.into('thingful_reviews').insert(reviews);
+      await trx.raw(`SELECT setval('thingful_reviews_id_seq', ?)`, [
+        reviews[reviews.length - 1].id
+      ]);
+    }
+  });
 }
 
 function seedMaliciousThing(db, user, thing) {

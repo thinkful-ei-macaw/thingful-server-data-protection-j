@@ -25,6 +25,8 @@ describe('Protected endpoints', () => {
     helpers.seedThingsTables(db, testUsers, testThings, testReviews)
   );
 
+  // array of endpoints means we can use a forEach to loop over tests
+  // the tests are very similar so this saves us lots of lines
   const protectedEndpoints = [
     {
       name: 'GET /api/things/:thing_id',
