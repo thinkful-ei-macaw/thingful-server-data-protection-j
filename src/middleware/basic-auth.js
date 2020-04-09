@@ -34,9 +34,15 @@ function requireAuth(req, res, next) {
         return res.status(401).json({ error: 'Unauthorized request' });
       }
 
-      req.user = user;
-
-      next();
+      return bcrypt
+        .compare(tokenPassword, user.password)
+        .then((passwordMatch) => {
+          if (!passwordMatch) {
+            return res.status(401).json({ error: 'Unauthorized request' });
+          }
+          req.user = user;
+          next();
+        });
     }
   );
 }
