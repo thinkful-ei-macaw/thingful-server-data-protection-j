@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const AuthService = require('../auth/auth-service');
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   // get authorization off request header
   const authToken = req.get('Authorization') || '';
 
@@ -25,26 +25,30 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized request' });
   }
 
-  // then make sure the user: exists in db
-  AuthService.getUserWithUserName(req.app.get('db'), tokenUserName).then(
-    (user) => {
-      // if the user is empty, or the password doesn't match
-      // what we have on record, deny request
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized request' });
-      }
+  try {
+    // then make sure the user: exists in db
+    const user = await AuthService.getUserWithUserName(
+      req.app.get('db'),
+      tokenUserName
+    );
 
-      return bcrypt
-        .compare(tokenPassword, user.password)
-        .then((passwordMatch) => {
-          if (!passwordMatch) {
-            return res.status(401).json({ error: 'Unauthorized request' });
-          }
-          req.user = user;
-          next();
-        });
+    // if the user is empty, deny request
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized request' });
     }
-  );
+
+    // comapre password using bcrypt, if no match, deny request
+    const passwordMatch = await bcrypt.compare(tokenPassword, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Unauthorized request' });
+    }
+
+    // otherwise put the user on the req object and call next()
+    req.user = user;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = {
