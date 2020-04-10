@@ -45,39 +45,29 @@ describe('Protected endpoints', () => {
     }
   ];
 
-  protectedEndpoints.forEach((endpoint) => {
+  protectedEndpoints.forEach(endpoint => {
     describe(endpoint.name, () => {
-      it(`responds with 401 'Missing basic token' when no basic token`, () => {
+      it(`responds with 401 'Missing bearer token' when no bearer token`, () => {
         return endpoint
           .method(endpoint.path)
-          .expect(401, { error: `Missing basic token` });
+          .expect(401, { error: `Missing bearer token` });
       });
     });
 
-    it(`responds 401 'Unauthorized request' when no credentials in token`, () => {
-      const userMissingCreds = { user_name: '', password: '' };
+    it(`responds 401 'Unauthorized request' when invalid JWT secret`, () => {
+      const validUser = testUsers[0];
+      const invalidSecret = 'bad-secret';
       return endpoint
         .method(endpoint.path)
-        .set('Authorization', helpers.makeAuthHeader(userMissingCreds))
+        .set('Authorization', helpers.makeAuthHeader(validUser, invalidSecret))
         .expect(401, { error: 'Unauthorized request' });
     });
 
-    it(`responds 401 'Unauthorized request' when invalid user`, () => {
-      const userInvalid = { user_name: 'user-bad', password: 'guy' };
+    it(`responds 401 'Unauthorized request' when invalid sub in payload`, () => {
+      const invalidUser = { user_name: 'not-a-user', id: 1 };
       return endpoint
         .method(endpoint.path)
-        .set('Authorization', helpers.makeAuthHeader(userInvalid))
-        .expect(401, { error: 'Unauthorized request' });
-    });
-
-    it(`responds 401 'Unauthorized request' when invalid pass`, () => {
-      const userInvalidPassword = {
-        user_name: testUsers[0].user_name,
-        password: 'wrong'
-      };
-      return endpoint
-        .method(endpoint.path)
-        .set('Authorization', helpers.makeAuthHeader(userInvalidPassword))
+        .set('Authorization', helpers.makeAuthHeader(invalidUser))
         .expect(401, { error: 'Unauthorized request' });
     });
   });

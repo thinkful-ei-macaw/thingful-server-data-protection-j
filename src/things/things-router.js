@@ -1,15 +1,16 @@
 const express = require('express');
 const ThingsService = require('./things-service');
-const { requireAuth } = require('../middleware/basic-auth');
+const { requireAuth } = require('../middleware/jwt-auth');
 
 const thingsRouter = express.Router();
 
-thingsRouter.route('/').get((req, res, next) => {
-  ThingsService.getAllThings(req.app.get('db'))
-    .then((things) => {
-      res.json(ThingsService.serializeThings(things));
-    })
-    .catch(next);
+thingsRouter.route('/').get(async (req, res, next) => {
+  try {
+    things = await ThingsService.getAllThings(req.app.get('db'));
+    res.json(ThingsService.serializeThings(things));
+  } catch (e) {
+    next(e);
+  }
 });
 
 thingsRouter
@@ -24,12 +25,16 @@ thingsRouter
   .route('/:thing_id/reviews/')
   .all(requireAuth)
   .all(checkThingExists)
-  .get((req, res, next) => {
-    ThingsService.getReviewsForThing(req.app.get('db'), req.params.thing_id)
-      .then((reviews) => {
-        res.json(ThingsService.serializeThingReviews(reviews));
-      })
-      .catch(next);
+  .get(async (req, res, next) => {
+    try {
+      const reviews = await ThingsService.getReviewsForThing(
+        req.app.get('db'),
+        req.params.thing_id
+      );
+      res.json(ThingsService.serializeThingReviews(reviews));
+    } catch (e) {
+      next(e);
+    }
   });
 
 /* async/await syntax for promises */

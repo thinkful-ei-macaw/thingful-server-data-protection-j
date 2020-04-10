@@ -1,15 +1,42 @@
 const express = require('express');
 const path = require('path');
 const ReviewsService = require('./reviews-service');
-const { requireAuth } = require('../middleware/basic-auth');
+const { requireAuth } = require('../middleware/jwt-auth');
 
 const reviewsRouter = express.Router();
 const jsonBodyParser = express.json();
 
+// reviewsRouter
+//   .route('/')
+//   .all(requireAuth)
+//   .post(jsonBodyParser, (req, res, next) => {
+//     const { thing_id, rating, text } = req.body;
+//     const newReview = { thing_id, rating, text };
+
+//     for (const [key, value] of Object.entries(newReview))
+//       if (value == null)
+//         return res.status(400).json({
+//           error: `Missing '${key}' in request body`
+//         });
+
+//     // user is on the request body thanks to requireAuth middleware
+//     // so we just pick it up here
+//     newReview.user_id = req.user.id;
+
+//     ReviewsService.insertReview(req.app.get('db'), newReview)
+//       .then((review) => {
+//         res
+//           .status(201)
+//           .location(path.posix.join(req.originalUrl, `/${review.id}`))
+//           .json(ReviewsService.serializeReview(review));
+//       })
+//       .catch(next);
+//   });
+
 reviewsRouter
   .route('/')
   .all(requireAuth)
-  .post(jsonBodyParser, (req, res, next) => {
+  .post(jsonBodyParser, async (req, res, next) => {
     const { thing_id, rating, text } = req.body;
     const newReview = { thing_id, rating, text };
 
@@ -22,15 +49,18 @@ reviewsRouter
     // user is on the request body thanks to requireAuth middleware
     // so we just pick it up here
     newReview.user_id = req.user.id;
-
-    ReviewsService.insertReview(req.app.get('db'), newReview)
-      .then((review) => {
-        res
-          .status(201)
-          .location(path.posix.join(req.originalUrl, `/${review.id}`))
-          .json(ReviewsService.serializeReview(review));
-      })
-      .catch(next);
+    try {
+      const review = await ReviewsService.insertReview(
+        req.app.get('db'),
+        newReview
+      );
+      res
+        .status(201)
+        .location(path.posix.join(req.originalUrl, `/${review.id}`))
+        .json(ReviewsService.serializeReview(review));
+    } catch (e) {
+      next(e);
+    }
   });
 
 module.exports = reviewsRouter;

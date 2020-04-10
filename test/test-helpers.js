@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 function makeUsersArray() {
   return [
@@ -140,9 +141,9 @@ function makeReviewsArray(users, things) {
 }
 
 function makeExpectedThing(users, thing, reviews = []) {
-  const user = users.find((user) => user.id === thing.user_id);
+  const user = users.find(user => user.id === thing.user_id);
 
-  const thingReviews = reviews.filter((review) => review.thing_id === thing.id);
+  const thingReviews = reviews.filter(review => review.thing_id === thing.id);
 
   const number_of_reviews = thingReviews.length;
   const average_review_rating = calculateAverageReviewRating(thingReviews);
@@ -168,18 +169,16 @@ function makeExpectedThing(users, thing, reviews = []) {
 function calculateAverageReviewRating(reviews) {
   if (!reviews.length) return 0;
 
-  const sum = reviews.map((review) => review.rating).reduce((a, b) => a + b);
+  const sum = reviews.map(review => review.rating).reduce((a, b) => a + b);
 
   return Math.round(sum / reviews.length);
 }
 
 function makeExpectedThingReviews(users, thingId, reviews) {
-  const expectedReviews = reviews.filter(
-    (review) => review.thing_id === thingId
-  );
+  const expectedReviews = reviews.filter(review => review.thing_id === thingId);
 
-  return expectedReviews.map((review) => {
-    const reviewUser = users.find((user) => user.id === review.user_id);
+  return expectedReviews.map(review => {
+    const reviewUser = users.find(user => user.id === review.user_id);
     return {
       id: review.id,
       text: review.text,
@@ -235,7 +234,7 @@ function cleanTables(db) {
 }
 
 function seedUsers(db, users) {
-  const usersHashedPw = users.map((user) => ({
+  const usersHashedPw = users.map(user => ({
     ...user,
     password: bcrypt.hashSync(user.password, 1)
   }));
@@ -261,7 +260,7 @@ function seedUsers(db, users) {
 // }
 
 function seedThingsTables(db, users, things = [], reviews = []) {
-  return db.transaction(async (trx) => {
+  return db.transaction(async trx => {
     await seedUsers(trx, users);
 
     if (things.length) {
@@ -286,11 +285,12 @@ function seedMaliciousThing(db, user, thing) {
   );
 }
 
-function makeAuthHeader(user) {
-  const token = Buffer.from(`${user.user_name}:${user.password}`).toString(
-    'base64'
-  );
-  return `Basic ${token}`;
+function makeAuthHeader(user, secret = process.env.JWT_SECRET) {
+  const token = jwt.sign({ user_id: user.id }, secret, {
+    subject: user.user_name,
+    algorithm: 'HS256'
+  });
+  return `Bearer ${token}`;
 }
 
 module.exports = {

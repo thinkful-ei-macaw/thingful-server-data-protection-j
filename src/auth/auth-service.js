@@ -18,6 +18,12 @@ const AuthService = {
       algorithm: 'HS256'
     });
   },
+  // verify a jwt by comparing with current secret and algo
+  verifyJwt(token) {
+    return jwt.verify(token, config.JWT_SECRET, {
+      algorithms: ['HS256']
+    });
+  },
   // parse the token from the client back into a format we can
   // read, split on : due to separation of user:password
   parseBasicToken(token) {
