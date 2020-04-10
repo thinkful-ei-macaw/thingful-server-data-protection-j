@@ -38,7 +38,10 @@ async function requireAuth(req, res, next) {
     }
 
     // comapre password using bcrypt, if no match, deny request
-    const passwordMatch = await bcrypt.compare(tokenPassword, user.password);
+    const passwordMatch = await AuthService.comparePasswords(
+      tokenPassword,
+      user.password
+    );
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Unauthorized request' });
     }

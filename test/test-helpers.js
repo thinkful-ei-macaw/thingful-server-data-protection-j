@@ -305,5 +305,6 @@ module.exports = {
   makeThingsFixtures,
   cleanTables,
   seedThingsTables,
-  seedMaliciousThing
+  seedMaliciousThing,
+  seedUsers
 };
